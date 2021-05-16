@@ -13,6 +13,7 @@ mongoose.connect(databaseURL, options);
 
 var userSchema = new Schema({
     userEmail: {type: String, required: true},
+    userName: {type: String, required: true},
     userPassword: {type: String, required: true},
 });
 

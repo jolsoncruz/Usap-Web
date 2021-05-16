@@ -4,10 +4,10 @@ const path = require('path');
 const hbs = require('express-handlebars');
 const app = express();
 const mongoose = require('mongoose');
-const bodyparser = require("body-parser")
+const bodyParser = require("body-parser")
 const session = require('express-session')
 const bcrypt = require('bcrypt');
-const urlencoder = bodyparser.urlencoded({extended: false})
+const urlencoder = bodyParser.urlencoded({extended: false})
 
 // Import Models
 const userModel = require('./models/user');
@@ -49,7 +49,11 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 // * LANDING PAGE
 app.get('/', (req, res) => {
-    res.render('index');
+    userModel.find({}).exec(function(err, users){
+        res.render('index',{
+            data: users
+        });
+    });
 });
 
 //HTTP Status Routes
