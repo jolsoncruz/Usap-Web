@@ -1,0 +1,31 @@
+{
+  "name": "delasalleusap",
+  "version": "1.0.0",
+  "description": "Project for NSAPDEV",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jolsoncruz/DeLaSalleUsap.git"
+  },
+  "author": "Aryan Arora, Jolson Cruz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jolsoncruz/DeLaSalleUsap/issues"
+  },
+  "homepage": "https://github.com/jolsoncruz/DeLaSalleUsap#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.5",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "hbs": "^4.1.2",
+    "jquery": "^3.6.0",
+    "mongoose": "^5.12.9",
+    "path": "^0.12.7",
+    "socket.io": "^4.1.1"
+  }
+}
