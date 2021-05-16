@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const databaseURL = 'mongodb+srv://-------------------------------------'
+const databaseURL = 'mongodb+srv://dlsuAdmin:YtwAp3KwEV9RlZ3C@delasalleusap.5zhp2.mongodb.net/delasalleusap?retryWrites=true&w=majority'
 
 const options = {
 	useNewUrlParser: true,
