@@ -105,6 +105,7 @@ a {
 .chatbox {
     background-color: #c6ebd4c2;
     width: 100%;
+<<<<<<< HEAD
 }
 
 .chatbox .blankchat {
@@ -113,6 +114,8 @@ a {
     display: grid;
     place-items: center;
     color: rgba(0, 0, 0, 0.582);
+=======
+>>>>>>> Jolson
 }
 
 .roominfo {
