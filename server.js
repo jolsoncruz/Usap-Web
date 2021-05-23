@@ -1,20 +1,21 @@
 // Package Dependencies
-const express = require('express');
-const path = require('path');
-const hbs = require('express-handlebars');
-const app = express();
-const mongoose = require('mongoose');
+const express = require('express')
+const io = require('socket.io')(3000, {cors:{origin:"*"}})
+const path = require('path')
+const hbs = require('express-handlebars')
+const app = express()
+const mongoose = require('mongoose')
 const bodyParser = require("body-parser")
 const session = require('express-session')
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt')
 const urlencoder = bodyParser.urlencoded({extended: false})
 
 // Import Models
-const userModel = require('./models/user');
+const userModel = require('./models/user')
 
 // Environment Configurations
-app.set('view engine', 'hbs');
-app.set('port', (process.env.PORT || 3000));
+app.set('port', (process.env.PORT || 5000))
+app.set('view engine', 'hbs')
 app.engine('hbs',hbs({
     extname: 'hbs',
     defaultView: 'main',
@@ -31,8 +32,10 @@ app.engine('hbs',hbs({
             return JSON.stringify(context);
         }
     }
-}));
-app.use(express.static(path.join(__dirname, 'public')));
+}))
+app.use(express.static('public'))
+app.use(express.urlencoded({extended:true}))
+
 app.use(session({
     secret: "very super secret",
     resave: true,
@@ -42,6 +45,22 @@ app.use(session({
         httpOnly: true
     }
 }));
+
+const users = {}
+
+io.on('connection', socket => {
+    socket.on('new-user', username => {
+        users[socket.id] = username
+        socket.broadcast.emit('user-connected', username)
+    })
+    socket.on('send-chat-message', message => {
+        socket.broadcast.emit('chat-message', {username: users[socket.id], message:message})
+    })
+    socket.on('disconnect', () => {
+        socket.broadcast.emit('user-disconnected', users[socket.id])
+        delete users[socket.id]
+    })
+})
 
 // Configuration for handling API endpoint data
 app.use(bodyParser.json()); // support json encoded bodies
