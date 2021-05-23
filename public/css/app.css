@@ -104,7 +104,6 @@ a {
 
 .chatbox {
     background-color: #c6ebd4c2;
-    flex: 0.75;
 }
 
 .roominfo {
@@ -149,6 +148,17 @@ a {
     font-size: xx-small;
     letter-spacing: 1px;
     margin-bottom: 10px;
+}
+
+.chatmessages ul .join {
+    text-align: center;
+    background-color: transparent;
+    font-style: italic;
+}
+
+.chatmessages ul .you {
+    background-color:#10693562;
+    color: white;
 }
 
 .composemessage {
