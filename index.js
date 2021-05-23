@@ -50,7 +50,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 // * LANDING PAGE
 app.get('/', (req, res) => {
     userModel.find({}).exec(function(err, users){
-        res.render('index',{
+        res.render('body',{
             data: users
         });
     });
