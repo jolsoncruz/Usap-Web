@@ -53,44 +53,83 @@ app.use(session({
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+var rooms = getRooms()
+const users = {}
+
+function getRooms(){
+    var finalResult = {};
+    roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
+        var tempResult = [];
+        allRooms.forEach(function(document){
+            tempResult.push(document.toObject());
+        });
+        for(var i=0; i<tempResult.length; i++){
+            finalResult[tempResult[i].roomSlug] = {};
+        }
+    }) 
+    return finalResult;
+}
+
+
+// function getRooms(){
+//     var finalResult = {};
+//     roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
+//         var tempResult = [];
+//         allRooms.forEach(function(document){
+//             tempResult.push(document.toObject());
+//         });
+        
+//         for(var i=0; i<tempResult.length; i++){
+//             finalResult[tempResult[i].roomSlug] = {};
+//         }
+//         console.log(finalResult);
+//     }) 
+//     setInterval(1000);
+//     console.log(finalResult);
+// }
+
 // * LANDING PAGE
 app.get('/', (req, res) => {
-    roomModel.find({}).exec(function(err, data){
+    roomModel.find({}).lean().exec(function(err, allRooms){
         res.render('home',{
-            rooms: data
+            rooms: allRooms
         });
     });
 });
 
 app.get('/:room', (req, res) => {
-    roomModel.findOne({roomSlug: req.params.room}).exec(function(err, data){
-        if(data === null){
-            res.render('error',{
-                //session: req.session,
-                error: '404',
-                message: "The page can't be found"
-            });
-        } else{
-            console.log(data);
-            res.render('room',{
-                roomName: data.roomName,
-                roomSlug: data.dataSlug
-            })
-        }
+    roomModel.find({}).lean().exec(function(err, allRooms){
+        roomModel.findOne({roomSlug: req.params.room}).exec(function(err, specificRoom){
+            if(specificRoom === null){
+                res.render('error',{
+                    rooms: allRooms,
+                    //session: req.session,
+                    error: '404',
+                    message: "The page can't be found"
+                });
+            } else{
+                res.render('room',{
+                    rooms: allRooms,
+                    roomName: specificRoom.roomName,
+                    roomSlug: specificRoom.dataSlug
+                })
+            }
+        })
     })
 })
 
-const users = {}
-
 io.on('connection', socket => {
     socket.on('new-user', username => {
+        console.log("new-user:" + JSON.stringify(users))
         users[socket.id] = username
         socket.broadcast.emit('user-connected', username)
     })
     socket.on('send-chat-message', message => {
+        console.log("send-chat-message:" + JSON.stringify(users))
         socket.broadcast.emit('chat-message', {username: users[socket.id], message:message})
     })
     socket.on('disconnect', () => {
+        console.log("disconnect:" + JSON.stringify(users))
         socket.broadcast.emit('user-disconnected', users[socket.id])
         delete users[socket.id]
     })
