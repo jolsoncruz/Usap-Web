@@ -12,6 +12,8 @@ const path = require('path')
 
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+var nodemailer = require("nodemailer");
+var xoauth2 = require('xoauth2');
 
 // Import Models
 const userModel = require('./models/user')
@@ -39,6 +41,8 @@ app.engine('hbs',hbs({
 app.use(express.static('public'))
 app.use(express.urlencoded({extended:true}))
 
+
+
 app.use(session({
     secret: "very super secret",
     resave: true,
@@ -55,21 +59,23 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 var rooms = getRooms()
 const users = {}
+var finalResult = {};
 
 function getRooms(){
-    var finalResult = {};
+    var tempResult = [];
     roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
-        var tempResult = [];
         allRooms.forEach(function(document){
             tempResult.push(document.toObject());
         });
+
         for(var i=0; i<tempResult.length; i++){
             finalResult[tempResult[i].roomSlug] = {};
         }
-    }) 
-    return finalResult;
-}
 
+        console.log(finalResult);
+        rooms = finalResult;
+    })
+}
 
 // function getRooms(){
 //     var finalResult = {};
@@ -82,9 +88,11 @@ function getRooms(){
 //         for(var i=0; i<tempResult.length; i++){
 //             finalResult[tempResult[i].roomSlug] = {};
 //         }
-//         console.log(finalResult);
+//         //console.log(finalResult);
 //     }) 
-//     setInterval(1000);
+//     setTimeout(function() {
+//         console.log("inside interval");
+//     }, 1000);
 //     console.log(finalResult);
 // }
 
@@ -96,6 +104,106 @@ app.get('/', (req, res) => {
         });
     });
 });
+
+app.get('/login', (req, res) => {
+    res.render('login', {
+        layout: 'auth'
+    })
+}) 
+
+app.get('/signup', (req, res) => {
+    res.render('signup', {
+        layout: 'auth',
+        message: 'hello'
+    })
+}) 
+
+var OTP = 0;
+var valid = 0;
+var newUser = new userModel({
+    userName: '',
+    userEmail: '',
+    userPassword: ''
+})
+
+app.post('/register', urlencoder, (req, res) => {
+
+    newUser.userName = req.body.name;
+    newUser.userEmail = req.body.email;
+    newUser.userPassword = req.body.password;
+
+    console.log(newUser);
+    
+    function sendOTP(){
+        var smtpTransport = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: "dlsu.otp@gmail.com",
+                pass: "4ry4nJ0150n"
+            }
+        });
+
+        var mailOptions = {
+            from: "dlsu.otp@gmail.com",
+            to: newUser.userEmail,
+            subject: "De La Salle Usap Verification",
+            text: "Verify your account within 5 minutes! Your OTP is : " + OTP
+        };
+
+        smtpTransport.sendMail(mailOptions, function(error, response){
+            if(error){
+                console.log(error);
+            }else{
+                console.log("Message sent: " + response.message);
+            }
+        });
+    }
+
+    function generateOTP(){
+        OTP = Math.floor(100000 + Math.random() * 900000);
+        valid = 1;
+        sendOTP();
+        console.log(OTP);
+        setTimeout(function() {
+            valid = 0;
+        }, 5 * 60 * 1000);
+    }
+
+    userModel.findOne({userEmail: newUser.userEmail}, (err1, userQuery) => {
+        if (err1) {
+            console.log(err1.errors);
+            res.render('register', {
+                error: "ERR: DB validation"
+            })
+        }
+        if (userQuery){
+            console.log('ERR: User found');
+        } else {
+            generateOTP();
+            res.render('OTP', {
+                layout: 'auth'
+            })
+        }
+    })
+
+})
+
+app.post('/checkotp', urlencoder, (req, res) => {
+    var userOTP = req.body.otp;
+    if (valid == 1){
+        if (userOTP == OTP){
+            console.log("OTP MATCHES")
+            newUser.save(function (err, results) {
+                console.log(results);
+              });
+        }
+    }
+    newUser.userName = '';
+    newUser.userEmail = '';
+    newUser.userPassword = '';
+})
 
 app.get('/:room', (req, res) => {
     roomModel.find({}).lean().exec(function(err, allRooms){
