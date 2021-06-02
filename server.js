@@ -205,7 +205,7 @@ app.post('/register', urlencoder, (req, res) => {
         console.log(OTP);
         setTimeout(function() {
             valid = 0;
-        }, 5 * 60 * 1000);
+        }, 5000);
     }
 
     userModel.findOne({userEmail: newUser.userEmail}, (err1, userQuery) => {
@@ -235,6 +235,8 @@ app.post('/checkotp', urlencoder, (req, res) => {
             newUser.save(function (err, results) {
                 console.log(results);
               });
+        } else {
+
         }
     }
     
@@ -260,7 +262,8 @@ app.get('/:room', (req, res) => {
                     rooms: allRooms,
                     //session: req.session,
                     error: '404',
-                    message: "The page can't be found"
+                    message: "The page can't be found",
+                    layout: 'auth'
                 });
             } else{
                 res.render('room',{
@@ -291,21 +294,23 @@ io.on('connection', socket => {
 })
 
 //HTTP Status Routes
-// app.use((req, res, next) => {
-//     res.status(404).render('error',{
-//         session: req.session,
-//         error: '404',
-//         message: "The page can't be found"
-//     });
-// });
+app.use((req, res, next) => {
+    res.status(404).render('error',{
+        session: req.session,
+        error: '404',
+        message: "The page can't be found",
+        layout: 'auth'
+    });
+});
 
-// app.use((req, res, next) => {
-//   res.status(500).render('error',{
-//     session: req.session,
-//     error: '500',
-//     message: 'Internal Server Error'
-//   });
-// });
+app.use((req, res, next) => {
+  res.status(500).render('error',{
+    session: req.session,
+    error: '500',
+    message: 'Internal Server Error',
+    layout: 'auth'
+  });
+});
 
 server.listen(3000), function(){
     console.log('Server started on port 3000');

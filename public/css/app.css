@@ -72,6 +72,8 @@ a {
     width: 50px;
     height: 50px;
     background-color: rgb(159, 243, 177);
+    display: grid;
+    place-items: center;
 }
 
 .chatroomlist .chatroomtile .icon img {
