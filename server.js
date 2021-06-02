@@ -20,6 +20,8 @@ const userModel = require('./models/user')
 const roomModel = require('./models/room')
 const e = require('express')
 
+app.listen(process.env.PORT || 3000)
+
 // Environment Configurations
 app.set('view engine', 'hbs')
 app.engine('hbs',hbs({
