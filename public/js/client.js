@@ -1,4 +1,3 @@
-const io = require('socket.io')(server, {cors:{origin:"*"}})
 const socket = io()
 const messageContainer = document.getElementById('message-container')
 const messageForm = document.getElementById('send-container')
