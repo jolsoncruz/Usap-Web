@@ -129,7 +129,7 @@ app.post('/login', urlencoder ,(req, res) => {
         }
         if (userQuery) {
             console.log("User found!")
-            if(user.userPassword == userQuery.userPassword){
+            if(bcrypt.compareSync(user.userPassword, userQuery.userPassword)){
                 console.log("Login Successful");
                 req.session.loggedIn = true;
                 req.session.userEmail = userQuery.userEmail;
@@ -167,7 +167,7 @@ app.post('/register', urlencoder, (req, res) => {
 
     newUser.userName = req.body.name;
     newUser.userEmail = req.body.email;
-    newUser.userPassword = req.body.password;
+    newUser.userPassword = bcrypt.hashSync(req.body.password,10);
 
     console.log(newUser);
     
@@ -205,7 +205,7 @@ app.post('/register', urlencoder, (req, res) => {
         console.log(OTP);
         setTimeout(function() {
             valid = 0;
-        }, 5000);
+        }, 5 * 60 * 1000);
     }
 
     userModel.findOne({userEmail: newUser.userEmail}, (err1, userQuery) => {
@@ -220,7 +220,8 @@ app.post('/register', urlencoder, (req, res) => {
         } else {
             generateOTP();
             res.render('OTP', {
-                layout: 'auth'
+                layout: 'auth',
+                error: ''
             })
         }
     })
@@ -235,18 +236,24 @@ app.post('/checkotp', urlencoder, (req, res) => {
             newUser.save(function (err, results) {
                 console.log(results);
               });
+              req.session.userName = newUser.userName;
+              req.session.userEmail = newUser.userEmail;
+              req.session.loggedIn = true;
+              res.redirect('/');
         } else {
-
+            console.log("WRONG OTP");
+            res.render('OTP', {
+                layout: 'auth',
+                error: 'Wrong OTP, please try again!'
+            })
         }
+    } else {
+        console.log("EXPIRED OTP");
+        res.render('OTP', {
+            layout: 'auth',
+            error: 'Expired OTP, please try again!'
+        })
     }
-    
-    req.session.userName = newUser.userName;
-    req.session.userEmail = newUser.userEmail;
-    req.session.loggedIn = true;
-    newUser.userName = '';
-    newUser.userEmail = '';
-    newUser.userPassword = '';
-    res.redirect('/');
 })
 
 app.get('/logout', (req, res) => {

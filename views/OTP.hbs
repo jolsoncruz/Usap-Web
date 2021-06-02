@@ -10,7 +10,9 @@
             <input id="userOTP" type="number" name="otp" placeholder="Enter OTP sent to your email" required>
             <button type="submit">Verify</button>
             <p style="color: red;">{{error}}</p>
+            {{#ifCond error "Expired OTP, please try again!"}}
+                <a href="signup"><p>Go back to home page</p></a>
+            {{/ifCond}}
         </form>
-        
 
 </div>
