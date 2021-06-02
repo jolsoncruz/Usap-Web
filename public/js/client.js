@@ -3,9 +3,22 @@ const messageContainer = document.getElementById('message-container')
 const messageForm = document.getElementById('send-container')
 const messageInput = document.getElementById('message-input')
 
-const userInput = prompt("What is your name?")
-appendUser(userInput, "joined")
-socket.emit('new-user', userInput)
+var userInput = ""
+
+if (messageForm != null) {
+	var userInput = prompt("What is your name?")
+	appendUser(userInput, "joined")
+	socket.emit('new-user', userInput)
+
+	messageForm.addEventListener('submit', e => {
+		e.preventDefault()
+		const message = messageInput.value
+		console.log(message)
+		appendMessage(userInput, message)
+		socket.emit('send-chat-message', message)
+		messageInput.value = ''
+	})
+}
 
 socket.on('chat-message', data => {
 	appendMessage(data.username, data.message)
@@ -17,14 +30,6 @@ socket.on('user-connected', name => {
 
 socket.on('user-disconnected', name => {
 	appendUser(name, "left")
-})
-
-messageForm.addEventListener('submit', e => {
-	e.preventDefault()
-	const message = messageInput.value
-	appendMessage(userInput, message)
-	socket.emit('send-chat-message', message)
-	messageInput.value = ''
 })
 
 function appendMessage(username, message){
