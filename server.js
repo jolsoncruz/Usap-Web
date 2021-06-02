@@ -20,6 +20,7 @@ const userModel = require('./models/user')
 const roomModel = require('./models/room')
 const e = require('express')
 
+const port = process.env.PORT || 3000
 app.listen(process.env.PORT || 3000)
 
 // Environment Configurations
@@ -317,6 +318,6 @@ app.use((req, res, next) => {
   });
 });
 
-server.listen(3000), function(){
-    console.log('Server started on port 3000');
+server.listen(port), function(){
+    console.log('Server started on port' + port);
 };
