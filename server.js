@@ -41,9 +41,6 @@ app.engine('hbs',hbs({
 }))
 app.use(express.static('public'))
 app.use(express.urlencoded({extended:true}))
-
-
-
 app.use(session({
     secret: "very super secret",
     resave: true,
@@ -58,51 +55,23 @@ app.use(session({
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-var rooms = getRooms()
-const users = {}
-var finalResult = {};
-
-function getRooms(){
-    var tempResult = [];
-    roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
-        allRooms.forEach(function(document){
-            tempResult.push(document.toObject());
-        });
-
-        for(var i=0; i<tempResult.length; i++){
-            finalResult[tempResult[i].roomSlug] = {};
-        }
-
-        console.log(finalResult);
-        rooms = finalResult;
-    })
-}
-
-// function getRooms(){
-//     var finalResult = {};
-//     roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
-//         var tempResult = [];
-//         allRooms.forEach(function(document){
-//             tempResult.push(document.toObject());
-//         });
-        
-//         for(var i=0; i<tempResult.length; i++){
-//             finalResult[tempResult[i].roomSlug] = {};
-//         }
-//         //console.log(finalResult);
-//     }) 
-//     setTimeout(function() {
-//         console.log("inside interval");
-//     }, 1000);
-//     console.log(finalResult);
-// }
+//  * GLOBAL VARIABLES
+var rooms = {}
+var OTP = 0;
+var valid = 0;
+var newUser = new userModel({
+    userName: '',
+    userEmail: '',
+    userPassword: ''
+})
 
 // * LANDING PAGE
 app.get('/', (req, res) => {
     if(req.session.loggedIn == true){
         roomModel.find({}).lean().exec(function(err, allRooms){
             res.render('home',{
-            rooms: allRooms
+            rooms: allRooms,
+            userName: req.session.userName
         });
     });
     } else {
@@ -110,11 +79,38 @@ app.get('/', (req, res) => {
     }
 });
 
+app.get('/getRooms', (req, res) => {
+    if(req.session.getRooms == 0){
+        roomModel.find({}, {'_id':0}).exec(function(err, allRooms){
+            var tempResult = [];
+            allRooms.forEach(function(document){
+                tempResult.push(document.toObject());
+            });
+            
+            for(var i=0; i<tempResult.length; i++){
+                rooms[tempResult[i].roomSlug] = { users: {} };
+            }
+            req.session.getRooms = 1;
+            res.redirect('/');
+        }) 
+    } else {
+        res.render('error',{
+            rooms: allRooms,
+            error: '404',
+            message: "The page can't be found"
+        });
+    }
+});
+
 app.get('/login', (req, res) => {
-    res.render('login', {
-        layout: 'auth',
-        error: ''
-    })
+    if(req.session.loggedIn == true){
+        res.redirect('/')
+    } else {
+        res.render('login', {
+            layout: 'auth',
+            error: ''
+        })
+    }
 })
 
 app.post('/login', urlencoder ,(req, res) => {
@@ -134,6 +130,7 @@ app.post('/login', urlencoder ,(req, res) => {
                 req.session.loggedIn = true;
                 req.session.userEmail = userQuery.userEmail;
                 req.session.userName = userQuery.userName;
+                req.session.getRooms = 0;
                 console.log(userQuery);
                 res.redirect('/getRooms');
             } else {
@@ -144,27 +141,21 @@ app.post('/login', urlencoder ,(req, res) => {
                 error: "User not found!",
                 layout: 'auth'})
         }
-        
     })
 })
 
 app.get('/signup', (req, res) => {
-    res.render('signup', {
-        layout: 'auth',
-        message: 'hello'
-    })
+    if(req.session.loggedIn == true){
+        res.redirect('/')
+    } else {
+        res.render('signup', {
+            layout: 'auth',
+            message: 'hello'
+        })
+    }
 }) 
 
-var OTP = 0;
-var valid = 0;
-var newUser = new userModel({
-    userName: '',
-    userEmail: '',
-    userPassword: ''
-})
-
 app.post('/register', urlencoder, (req, res) => {
-
     newUser.userName = req.body.name;
     newUser.userEmail = req.body.email;
     newUser.userPassword = bcrypt.hashSync(req.body.password,10);
@@ -225,7 +216,6 @@ app.post('/register', urlencoder, (req, res) => {
             })
         }
     })
-
 })
 
 app.post('/checkotp', urlencoder, (req, res) => {
@@ -262,54 +252,60 @@ app.get('/logout', (req, res) => {
 })
 
 app.get('/:room', (req, res) => {
-    roomModel.find({}).lean().exec(function(err, allRooms){
-        roomModel.findOne({roomSlug: req.params.room}).exec(function(err, specificRoom){
-            if(specificRoom === null){
-                res.render('error',{
-                    rooms: allRooms,
-                    //session: req.session,
-                    error: '404',
-                    message: "The page can't be found",
-                    layout: 'auth'
-                });
-            } else{
-                res.render('room',{
-                    rooms: allRooms,
-                    roomName: specificRoom.roomName,
-                    roomSlug: specificRoom.dataSlug
-                })
-            }
+    if(req.session.loggedIn == true){
+        roomModel.find({}).lean().exec(function(err, allRooms){
+            roomModel.findOne({roomSlug: req.params.room}).exec(function(err, specificRoom){
+                if(specificRoom === null){
+                    res.render('error',{
+                        rooms: allRooms,
+                        error: '404',
+                        message: "The page can't be found"
+                    });
+                } else{
+                    res.render('room',{
+                        layout: 'rooms',
+                        rooms: allRooms,
+                        roomName: specificRoom.roomName,
+                        roomSlug: specificRoom.roomSlug,
+                        userName: req.session.userName
+                    })
+                }
+            })
+        })
+    } else {
+        res.redirect('/')
+    }
+})
+
+io.on('connection', socket => {
+    socket.on('new-user', (roomSlug, username) => {
+        socket.join(roomSlug)
+        rooms[roomSlug].users[socket.id] = username
+        socket.to(roomSlug).emit('user-connected', username)
+        console.log(rooms)
+    })
+    socket.on('send-chat-message', (roomSlug, message) => {
+        console.log("roomSlug:" + roomSlug)
+        socket.to(roomSlug).emit('chat-message', {username: rooms[roomSlug].users[socket.id], message:message})
+        console.log(rooms)
+    })
+    socket.on('disconnect', () => {
+        getUserRooms(socket).forEach(roomSlug => {
+            socket.to(roomSlug).emit('user-disconnected', rooms[roomSlug].users[socket.id])
+            delete rooms[roomSlug].users[socket.id]
+            console.log(rooms)
         })
     })
 })
 
-io.on('connection', socket => {
-    socket.on('new-user', username => {
-        console.log("new-user:" + JSON.stringify(users))
-        users[socket.id] = username
-        socket.broadcast.emit('user-connected', username)
-    })
-    socket.on('send-chat-message', message => {
-        console.log("send-chat-message:" + JSON.stringify(users))
-        socket.broadcast.emit('chat-message', {username: users[socket.id], message:message})
-    })
-    socket.on('disconnect', () => {
-        console.log("disconnect:" + JSON.stringify(users))
-        socket.broadcast.emit('user-disconnected', users[socket.id])
-        delete users[socket.id]
-    })
-})
+function getUserRooms(socket){
+    return Object.entries(rooms).reduce((names, [name, room]) => {
+        if(room.users[socket.id] != null) names.push(name)
+        return names
+    }, [])
+}
 
 //HTTP Status Routes
-app.use((req, res, next) => {
-    res.status(404).render('error',{
-        session: req.session,
-        error: '404',
-        message: "The page can't be found",
-        layout: 'auth'
-    });
-});
-
 app.use((req, res, next) => {
   res.status(500).render('error',{
     session: req.session,
