@@ -1,6 +1,6 @@
 // Package Dependencies
-//const express = require('express')
-const app = require('./app')
+const express = require('express')
+const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io')(server, {cors:{origin:"*"}})
 
@@ -18,10 +18,9 @@ var xoauth2 = require('xoauth2');
 // Import Models
 const userModel = require('./models/user')
 const roomModel = require('./models/room')
-const e = require('express')
 
 const port = process.env.PORT || 3000
-app.listen(process.env.PORT || 3000)
+// ? app.listen(process.env.PORT || 3000)
 
 // Environment Configurations
 app.set('view engine', 'hbs')
