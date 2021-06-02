@@ -18,6 +18,7 @@ var xoauth2 = require('xoauth2');
 // Import Models
 const userModel = require('./models/user')
 const roomModel = require('./models/room')
+const e = require('express')
 
 // Environment Configurations
 app.set('view engine', 'hbs')
@@ -98,18 +99,54 @@ function getRooms(){
 
 // * LANDING PAGE
 app.get('/', (req, res) => {
-    roomModel.find({}).lean().exec(function(err, allRooms){
-        res.render('home',{
+    if(req.session.loggedIn == true){
+        roomModel.find({}).lean().exec(function(err, allRooms){
+            res.render('home',{
             rooms: allRooms
         });
     });
+    } else {
+        res.redirect('/login');
+    }
 });
 
 app.get('/login', (req, res) => {
     res.render('login', {
-        layout: 'auth'
+        layout: 'auth',
+        error: ''
     })
-}) 
+})
+
+app.post('/login', urlencoder ,(req, res) => {
+    var user = {
+        userEmail: req.body.email,
+        userPassword: req.body.password
+    }
+
+    userModel.findOne({userEmail: user.userEmail}, (err, userQuery) => {
+        if (err) {
+            console.log(err.errors)
+        }
+        if (userQuery) {
+            console.log("User found!")
+            if(user.userPassword == userQuery.userPassword){
+                console.log("Login Successful");
+                req.session.loggedIn = true;
+                req.session.userEmail = userQuery.userEmail;
+                req.session.userName = userQuery.userName;
+                console.log(userQuery);
+                res.redirect('/getRooms');
+            } else {
+                res.render('login', {error: "Incorrect password, please try again!", layout: 'auth'})
+            }
+        } else {
+            res.render('login', {
+                error: "User not found!",
+                layout: 'auth'})
+        }
+        
+    })
+})
 
 app.get('/signup', (req, res) => {
     res.render('signup', {
@@ -200,9 +237,19 @@ app.post('/checkotp', urlencoder, (req, res) => {
               });
         }
     }
+    
+    req.session.userName = newUser.userName;
+    req.session.userEmail = newUser.userEmail;
+    req.session.loggedIn = true;
     newUser.userName = '';
     newUser.userEmail = '';
     newUser.userPassword = '';
+    res.redirect('/');
+})
+
+app.get('/logout', (req, res) => {
+    req.session.loggedIn = false;
+    res.redirect('/')
 })
 
 app.get('/:room', (req, res) => {
