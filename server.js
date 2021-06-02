@@ -288,7 +288,7 @@ io.on('connection', socket => {
     })
     socket.on('send-chat-message', (roomSlug, message) => {
         console.log("roomSlug:" + roomSlug)
-        socket.to(roomSlug).emit('chat-message', {username: rooms[roomSlug].users[socket.id], message:message})
+        socket.to(roomSlug).emit('chat-message', {username: req.session.userName, message:message})
         console.log(rooms)
     })
     socket.on('disconnect', () => {
