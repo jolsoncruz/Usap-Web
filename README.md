@@ -1,4 +1,5 @@
 <img src="public/img/banner.png" alt="De La Salle Usap"/>
+
 # DeLaSalleUsap Chat Application 
 
 ### Description
